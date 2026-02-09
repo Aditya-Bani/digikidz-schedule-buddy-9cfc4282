@@ -1,5 +1,5 @@
-import { CalendarDays } from 'lucide-react';
 import logodk from '@/assets/logodk.png';
+import { LiveClock } from './LiveClock';
 
 export function Header() {
   return (
@@ -12,10 +12,7 @@ export function Header() {
               <p className="text-sm text-muted-foreground">Kota Wisata Cibubur</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <CalendarDays className="w-5 h-5" />
-            <span className="text-sm font-medium">Jadwal Les</span>
-          </div>
+          <LiveClock />
         </div>
       </div>
     </header>
