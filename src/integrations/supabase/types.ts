@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      schedule_entries: {
+        Row: {
+          coach: string
+          created_at: string
+          day: string
+          id: string
+          level: string
+          notes: string | null
+          student_name: string
+          time: string
+          updated_at: string
+        }
+        Insert: {
+          coach: string
+          created_at?: string
+          day: string
+          id?: string
+          level: string
+          notes?: string | null
+          student_name: string
+          time: string
+          updated_at?: string
+        }
+        Update: {
+          coach?: string
+          created_at?: string
+          day?: string
+          id?: string
+          level?: string
+          notes?: string | null
+          student_name?: string
+          time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,62 +1,136 @@
-import { useState, useCallback } from 'react';
-import { ScheduleEntry, DayOfWeek, TimeSlot } from '@/types/schedule';
+import { useState, useCallback, useEffect } from 'react';
+import { ScheduleEntry, DayOfWeek, TimeSlot, Coach, StudentLevel } from '@/types/schedule';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-// Sample data based on the Excel file
-const initialSchedule: ScheduleEntry[] = [
-  { id: '1', studentName: 'Neil', coach: 'Mr. Bani', level: 'Little Creator 1', day: 'sabtu', time: '09:00' },
-  { id: '2', studentName: 'Aufar', coach: 'Mr. Argy', level: 'Teenager 1', day: 'sabtu', time: '10:00' },
-  { id: '3', studentName: 'Chelsea', coach: 'Mr. Bani', level: 'Junior 1', day: 'sabtu', time: '10:00' },
-  { id: '4', studentName: 'Donna', coach: 'Mr. Bani', level: 'Junior 1', day: 'sabtu', time: '10:00' },
-  { id: '5', studentName: 'George', coach: 'Mr. Argy', level: 'Teenager 1', day: 'sabtu', time: '11:00' },
-  { id: '6', studentName: 'Marchia', coach: 'Mr. Bani', level: 'Junior 1', day: 'sabtu', time: '11:00' },
-  { id: '7', studentName: 'Veve', coach: 'Mr. Bani', level: 'Junior 1', day: 'senin', time: '13:00' },
-  { id: '8', studentName: 'Donna', coach: 'Mr. Bani', level: 'Junior 1', day: 'senin', time: '13:00' },
-  { id: '9', studentName: 'Kristof', coach: 'Mr. Bani', level: 'Little Creator 1', day: 'selasa', time: '13:00' },
-  { id: '10', studentName: 'Jetro', coach: 'Mr. Argy', level: 'Teenager 2', day: 'sabtu', time: '13:00' },
-  { id: '11', studentName: 'El', coach: 'Mr. Bani', level: 'Teenager 1', day: 'selasa', time: '14:00' },
-  { id: '12', studentName: 'Ismail', coach: 'Mr. Bani', level: 'Little Creator 1', day: 'rabu', time: '14:00' },
-  { id: '13', studentName: 'Darren', coach: 'Mr. Argy', level: 'Teenager 1', day: 'kamis', time: '14:00' },
-  { id: '14', studentName: 'Clarisha', coach: 'Mr. Bani', level: 'Teenager 1', day: 'jumat', time: '14:00' },
-  { id: '15', studentName: 'Lubna', coach: 'Mr. Bani', level: 'Trial Class', day: 'sabtu', time: '14:00' },
-  { id: '16', studentName: 'Lionel', coach: 'Mr. Argy', level: 'Teenager 2', day: 'jumat', time: '14:00' },
-  { id: '17', studentName: 'Kania', coach: 'Mr. Bani', level: 'Teenager 2', day: 'senin', time: '15:00' },
-  { id: '18', studentName: 'Nora', coach: 'Mr. Bani', level: 'Little Creator 1', day: 'selasa', time: '15:00' },
-  { id: '19', studentName: 'Safaa', coach: 'Mr. Bani', level: 'Junior 1', day: 'rabu', time: '15:00' },
-  { id: '20', studentName: 'Nael', coach: 'Mr. Bani', level: 'Teenager 1', day: 'kamis', time: '15:00' },
-  { id: '21', studentName: 'Nael', coach: 'Mr. Argy', level: 'Teenager 1', day: 'jumat', time: '15:00' },
-  { id: '22', studentName: 'Sherleen', coach: 'Mr. Argy', level: 'Junior 1', day: 'kamis', time: '15:00' },
-  { id: '23', studentName: 'Ara', coach: 'Mr. Bani', level: 'Little Creator 1', day: 'rabu', time: '16:00' },
-  { id: '24', studentName: 'Jacob', coach: 'Mr. Argy', level: 'Teenager 2', day: 'kamis', time: '16:00', notes: 'Cuti' },
-  { id: '25', studentName: 'Barta', coach: 'Mr. Argy', level: 'Teenager 2', day: 'kamis', time: '16:00' },
-  { id: '26', studentName: 'Nehal', coach: 'Mr. Bani', level: 'Junior 1', day: 'jumat', time: '16:00' },
-  { id: '27', studentName: 'Ara', coach: 'Mr. Bani', level: 'Little Creator 1', day: 'senin', time: '16:00' },
-  { id: '28', studentName: 'Bilal', coach: 'Mr. Bani', level: 'Junior 1', day: 'kamis', time: '16:00' },
-  { id: '29', studentName: 'Barta', coach: 'Mr. Argy', level: 'Teenager 1', day: 'jumat', time: '16:00' },
-  { id: '30', studentName: 'Luna', coach: 'Mr. Argy', level: 'Little Creator 1', day: 'kamis', time: '17:00', notes: 'Keep' },
-  { id: '31', studentName: 'Abee', coach: 'Mr. Bani', level: 'Trial Class', day: 'rabu', time: '17:00' },
-  { id: '32', studentName: 'Leia', coach: 'Mr. Bani', level: 'Junior 1', day: 'kamis', time: '17:00', notes: 'Keep' },
-];
+interface DbScheduleEntry {
+  id: string;
+  student_name: string;
+  coach: string;
+  level: string;
+  day: string;
+  time: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function dbToApp(row: DbScheduleEntry): ScheduleEntry {
+  return {
+    id: row.id,
+    studentName: row.student_name,
+    coach: row.coach as Coach,
+    level: row.level as StudentLevel,
+    day: row.day as DayOfWeek,
+    time: row.time as TimeSlot,
+    notes: row.notes || undefined,
+  };
+}
 
 export function useSchedule() {
-  const [schedule, setSchedule] = useState<ScheduleEntry[]>(initialSchedule);
+  const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const addEntry = useCallback((entry: Omit<ScheduleEntry, 'id'>) => {
-    const newEntry: ScheduleEntry = {
-      ...entry,
-      id: Date.now().toString(),
-    };
-    setSchedule((prev) => [...prev, newEntry]);
-  }, []);
+  // Fetch all entries from DB
+  const fetchSchedule = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('schedule_entries')
+      .select('*')
+      .order('time', { ascending: true });
 
-  const updateEntry = useCallback((id: string, updates: Partial<Omit<ScheduleEntry, 'id'>>) => {
+    if (error) {
+      console.error('Error fetching schedule:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal memuat jadwal dari database.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSchedule((data as DbScheduleEntry[]).map(dbToApp));
+    setLoading(false);
+  }, [toast]);
+
+  useEffect(() => {
+    fetchSchedule();
+  }, [fetchSchedule]);
+
+  const addEntry = useCallback(async (entry: Omit<ScheduleEntry, 'id'>) => {
+    const { data, error } = await supabase
+      .from('schedule_entries')
+      .insert({
+        student_name: entry.studentName,
+        coach: entry.coach,
+        level: entry.level,
+        day: entry.day,
+        time: entry.time,
+        notes: entry.notes || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding entry:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal menambahkan jadwal.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSchedule((prev) => [...prev, dbToApp(data as DbScheduleEntry)]);
+  }, [toast]);
+
+  const updateEntry = useCallback(async (id: string, updates: Partial<Omit<ScheduleEntry, 'id'>>) => {
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.studentName !== undefined) dbUpdates.student_name = updates.studentName;
+    if (updates.coach !== undefined) dbUpdates.coach = updates.coach;
+    if (updates.level !== undefined) dbUpdates.level = updates.level;
+    if (updates.day !== undefined) dbUpdates.day = updates.day;
+    if (updates.time !== undefined) dbUpdates.time = updates.time;
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes || null;
+
+    const { error } = await supabase
+      .from('schedule_entries')
+      .update(dbUpdates)
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating entry:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal memperbarui jadwal.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSchedule((prev) =>
       prev.map((entry) => (entry.id === id ? { ...entry, ...updates } : entry))
     );
-  }, []);
+  }, [toast]);
 
-  const deleteEntry = useCallback((id: string) => {
+  const deleteEntry = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('schedule_entries')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting entry:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal menghapus jadwal.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSchedule((prev) => prev.filter((entry) => entry.id !== id));
-  }, []);
+  }, [toast]);
 
   const getEntriesForCell = useCallback(
     (day: DayOfWeek, time: TimeSlot) => {
@@ -67,6 +141,7 @@ export function useSchedule() {
 
   return {
     schedule,
+    loading,
     addEntry,
     updateEntry,
     deleteEntry,
