@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_reports: {
+        Row: {
+          coach: string
+          coach_comment: string | null
+          created_at: string
+          date: string
+          id: string
+          lesson_name: string
+          lesson_week: number
+          level: string
+          media_urls: string[] | null
+          student_name: string
+          tools: string | null
+          updated_at: string
+        }
+        Insert: {
+          coach: string
+          coach_comment?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          lesson_name: string
+          lesson_week: number
+          level: string
+          media_urls?: string[] | null
+          student_name: string
+          tools?: string | null
+          updated_at?: string
+        }
+        Update: {
+          coach?: string
+          coach_comment?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          lesson_name?: string
+          lesson_week?: number
+          level?: string
+          media_urls?: string[] | null
+          student_name?: string
+          tools?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       schedule_entries: {
         Row: {
           coach: string
@@ -47,6 +92,27 @@ export type Database = {
           student_name?: string
           time?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      student_access_codes: {
+        Row: {
+          access_code: string
+          created_at: string
+          id: string
+          student_name: string
+        }
+        Insert: {
+          access_code: string
+          created_at?: string
+          id?: string
+          student_name: string
+        }
+        Update: {
+          access_code?: string
+          created_at?: string
+          id?: string
+          student_name?: string
         }
         Relationships: []
       }

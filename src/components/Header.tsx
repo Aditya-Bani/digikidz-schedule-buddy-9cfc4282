@@ -1,8 +1,15 @@
 import { Link, useLocation } from 'react-router-dom';
 import logodk from '@/assets/logodk.png';
 import { LiveClock } from './LiveClock';
-import { CalendarDays, LayoutGrid } from 'lucide-react';
+import { CalendarDays, LayoutGrid, FileText, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const navItems = [
+  { to: '/', label: 'Jadwal', icon: LayoutGrid },
+  { to: '/kalender', label: 'Kalender', icon: CalendarDays },
+  { to: '/reports', label: 'Reports', icon: FileText },
+  { to: '/parent', label: 'Parent Portal', icon: Users },
+];
 
 export function Header() {
   const location = useLocation();
@@ -20,30 +27,21 @@ export function Header() {
             </Link>
             <div className="h-8 w-px bg-border hidden sm:block" />
             <nav className="flex items-center gap-1">
-              <Link
-                to="/"
-                className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-                  location.pathname === '/'
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                )}
-              >
-                <LayoutGrid className="w-4 h-4" />
-                <span className="hidden sm:inline">Jadwal</span>
-              </Link>
-              <Link
-                to="/kalender"
-                className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-                  location.pathname === '/kalender'
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                )}
-              >
-                <CalendarDays className="w-4 h-4" />
-                <span className="hidden sm:inline">Kalender</span>
-              </Link>
+              {navItems.map(({ to, label, icon: Icon }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                    location.pathname === to
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{label}</span>
+                </Link>
+              ))}
             </nav>
           </div>
           <LiveClock />
