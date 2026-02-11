@@ -1,18 +1,45 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Header } from '@/components/Header';
 import { StatsCards } from '@/components/StatsCards';
 import { ScheduleGrid } from '@/components/ScheduleGrid';
 import { ScheduleDialog } from '@/components/ScheduleDialog';
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
 import { useSchedule } from '@/hooks/useSchedule';
-import { ScheduleEntry, DayOfWeek, TimeSlot } from '@/types/schedule';
-import { Plus } from 'lucide-react';
+import { ScheduleEntry, DayOfWeek, TimeSlot, Coach, COACHES, LEVELS, StudentLevel } from '@/types/schedule';
+import { Plus, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Index = () => {
   const { schedule, addEntry, updateEntry, deleteEntry, getEntriesForCell } = useSchedule();
   const { toast } = useToast();
+
+  const [filterCoach, setFilterCoach] = useState<Coach | 'all'>('all');
+  const [filterLevel, setFilterLevel] = useState<string>('all');
+
+  const filteredGetEntriesForCell = useCallback(
+    (day: DayOfWeek, time: TimeSlot) => {
+      return getEntriesForCell(day, time).filter((entry) => {
+        const matchCoach = filterCoach === 'all' || entry.coach === filterCoach;
+        const matchLevel =
+          filterLevel === 'all' ||
+          (filterLevel === 'Little Creator' && entry.level.startsWith('Little Creator')) ||
+          (filterLevel === 'Junior' && entry.level.startsWith('Junior')) ||
+          (filterLevel === 'Teenager' && entry.level.startsWith('Teenager')) ||
+          (filterLevel === 'Trial Class' && entry.level === 'Trial Class');
+        return matchCoach && matchLevel;
+      });
+    },
+    [getEntriesForCell, filterCoach, filterLevel]
+  );
+
+  const hasActiveFilter = filterCoach !== 'all' || filterLevel !== 'all';
+
+  const clearFilters = () => {
+    setFilterCoach('all');
+    setFilterLevel('all');
+  };
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<ScheduleEntry | null>(null);
@@ -79,31 +106,67 @@ const Index = () => {
         <StatsCards schedule={schedule} />
 
         {/* Action Bar */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-bold text-foreground">Jadwal Mingguan</h2>
-            <p className="text-sm text-muted-foreground">
-              Klik pada sel untuk menambah atau mengedit jadwal murid
-            </p>
+        <div className="flex flex-col gap-3 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-foreground">Jadwal Mingguan</h2>
+              <p className="text-sm text-muted-foreground">
+                Klik pada sel untuk menambah atau mengedit jadwal murid
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                setEditingEntry(null);
+                setDefaultDay('senin');
+                setDefaultTime('08:00');
+                setDialogOpen(true);
+              }}
+              className="shadow-lg"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Tambah Jadwal
+            </Button>
           </div>
-          <Button
-            onClick={() => {
-              setEditingEntry(null);
-              setDefaultDay('senin');
-              setDefaultTime('08:00');
-              setDialogOpen(true);
-            }}
-            className="shadow-lg"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Tambah Jadwal
-          </Button>
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={filterCoach} onValueChange={(v) => setFilterCoach(v as Coach | 'all')}>
+              <SelectTrigger className="w-[160px] bg-background">
+                <SelectValue placeholder="Semua Coach" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="all">Semua Coach</SelectItem>
+                {COACHES.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterLevel} onValueChange={setFilterLevel}>
+              <SelectTrigger className="w-[180px] bg-background">
+                <SelectValue placeholder="Semua Level" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="all">Semua Level</SelectItem>
+                <SelectItem value="Little Creator">Little Creator</SelectItem>
+                <SelectItem value="Junior">Junior</SelectItem>
+                <SelectItem value="Teenager">Teenager</SelectItem>
+                <SelectItem value="Trial Class">Trial Class</SelectItem>
+              </SelectContent>
+            </Select>
+            {hasActiveFilter && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
+                <X className="h-4 w-4 mr-1" />
+                Reset
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Schedule Grid */}
         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <ScheduleGrid
-            getEntriesForCell={getEntriesForCell}
+            getEntriesForCell={filteredGetEntriesForCell}
             onAddEntry={handleAddClick}
             onEditEntry={handleEditClick}
             onDeleteEntry={handleDeleteClick}
