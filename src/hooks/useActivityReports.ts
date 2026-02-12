@@ -12,6 +12,8 @@ export interface ActivityReport {
   tools: string;
   coach: string;
   coachComment: string;
+  goalsMateri: string;
+  activityReportText: string;
   mediaUrls: string[];
   createdAt: string;
 }
@@ -26,6 +28,8 @@ interface DbReport {
   tools: string | null;
   coach: string;
   coach_comment: string | null;
+  goals_materi: string | null;
+  activity_report_text: string | null;
   media_urls: string[] | null;
   created_at: string;
   updated_at: string;
@@ -42,6 +46,8 @@ function dbToApp(row: DbReport): ActivityReport {
     tools: row.tools || '',
     coach: row.coach,
     coachComment: row.coach_comment || '',
+    goalsMateri: row.goals_materi || '',
+    activityReportText: row.activity_report_text || '',
     mediaUrls: row.media_urls || [],
     createdAt: row.created_at,
   };
@@ -91,6 +97,8 @@ export function useActivityReports(studentName?: string) {
         tools: report.tools || null,
         coach: report.coach,
         coach_comment: report.coachComment || null,
+        goals_materi: report.goalsMateri || null,
+        activity_report_text: report.activityReportText || null,
         media_urls: report.mediaUrls,
       })
       .select()
@@ -106,6 +114,36 @@ export function useActivityReports(studentName?: string) {
     return data;
   }, [toast]);
 
+  const updateReport = useCallback(async (id: string, report: Omit<ActivityReport, 'id' | 'createdAt'>) => {
+    const { data, error } = await supabase
+      .from('activity_reports')
+      .update({
+        student_name: report.studentName,
+        date: report.date,
+        level: report.level,
+        lesson_week: report.lessonWeek,
+        lesson_name: report.lessonName,
+        tools: report.tools || null,
+        coach: report.coach,
+        coach_comment: report.coachComment || null,
+        goals_materi: report.goalsMateri || null,
+        activity_report_text: report.activityReportText || null,
+        media_urls: report.mediaUrls,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating report:', error);
+      toast({ title: 'Error', description: 'Gagal memperbarui laporan.', variant: 'destructive' });
+      return;
+    }
+
+    setReports((prev) => prev.map((r) => (r.id === id ? dbToApp(data as DbReport) : r)));
+    return data;
+  }, [toast]);
+
   const deleteReport = useCallback(async (id: string) => {
     const { error } = await supabase.from('activity_reports').delete().eq('id', id);
     if (error) {
@@ -116,7 +154,7 @@ export function useActivityReports(studentName?: string) {
     setReports((prev) => prev.filter((r) => r.id !== id));
   }, [toast]);
 
-  return { reports, loading, addReport, deleteReport, refetch: fetchReports };
+  return { reports, loading, addReport, updateReport, deleteReport, refetch: fetchReports };
 }
 
 export function useAccessCodes() {

@@ -8,66 +8,157 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Copy, Upload, FileText, Key } from 'lucide-react';
+import { Plus, Trash2, Copy, Upload, FileText, Key, Pencil } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-export default function ReportsAdminPage() {
-  const { reports, addReport, deleteReport } = useActivityReports();
-  const { codes, generateCode, deleteCode } = useAccessCodes();
-  const { toast } = useToast();
-
-  const [studentName, setStudentName] = useState('');
-  const [date, setDate] = useState('');
-  const [level, setLevel] = useState('');
-  const [lessonWeek, setLessonWeek] = useState('');
-  const [lessonName, setLessonName] = useState('');
-  const [tools, setTools] = useState('');
-  const [coach, setCoach] = useState('');
-  const [coachComment, setCoachComment] = useState('');
+function ReportForm({
+  initial,
+  onSubmit,
+  submitLabel,
+}: {
+  initial?: Partial<ActivityReport>;
+  onSubmit: (data: Omit<ActivityReport, 'id' | 'createdAt'>, files: File[]) => Promise<void>;
+  submitLabel: string;
+}) {
+  const [studentName, setStudentName] = useState(initial?.studentName || '');
+  const [date, setDate] = useState(initial?.date || '');
+  const [level, setLevel] = useState(initial?.level || '');
+  const [lessonWeek, setLessonWeek] = useState(initial?.lessonWeek?.toString() || '');
+  const [lessonName, setLessonName] = useState(initial?.lessonName || '');
+  const [tools, setTools] = useState(initial?.tools || '');
+  const [coach, setCoach] = useState(initial?.coach || '');
+  const [coachComment, setCoachComment] = useState(initial?.coachComment || '');
+  const [goalsMateri, setGoalsMateri] = useState(initial?.goalsMateri || '');
+  const [activityReportText, setActivityReportText] = useState(initial?.activityReportText || '');
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [newCodeName, setNewCodeName] = useState('');
+  const { toast } = useToast();
 
-  const handleSubmitReport = async () => {
+  const handleSubmit = async () => {
     if (!studentName || !date || !level || !lessonWeek || !lessonName || !coach) {
       toast({ title: 'Error', description: 'Harap isi semua field wajib.', variant: 'destructive' });
       return;
     }
-
     setUploading(true);
-    const mediaUrls: string[] = [];
+    await onSubmit(
+      {
+        studentName,
+        date,
+        level,
+        lessonWeek: parseInt(lessonWeek),
+        lessonName,
+        tools,
+        coach,
+        coachComment,
+        goalsMateri,
+        activityReportText,
+        mediaUrls: initial?.mediaUrls || [],
+      },
+      mediaFiles
+    );
+    setUploading(false);
+  };
 
-    for (const file of mediaFiles) {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Nama Murid *</Label>
+          <Input value={studentName} onChange={(e) => setStudentName(e.target.value)} placeholder="Nama murid" />
+        </div>
+        <div className="space-y-2">
+          <Label>Tanggal *</Label>
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label>Level/Jenjang *</Label>
+          <Select value={level} onValueChange={setLevel}>
+            <SelectTrigger className="bg-background"><SelectValue placeholder="Pilih level" /></SelectTrigger>
+            <SelectContent className="bg-popover z-50">
+              {LEVELS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Coach *</Label>
+          <Select value={coach} onValueChange={setCoach}>
+            <SelectTrigger className="bg-background"><SelectValue placeholder="Pilih coach" /></SelectTrigger>
+            <SelectContent className="bg-popover z-50">
+              {COACHES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Minggu ke- *</Label>
+          <Input type="number" min={1} value={lessonWeek} onChange={(e) => setLessonWeek(e.target.value)} placeholder="1" />
+        </div>
+        <div className="space-y-2">
+          <Label>Nama Materi (Lesson) *</Label>
+          <Input value={lessonName} onChange={(e) => setLessonName(e.target.value)} placeholder="Nama materi" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label>Tools</Label>
+        <Input value={tools} onChange={(e) => setTools(e.target.value)} placeholder="Alat/software yang digunakan" />
+      </div>
+      <div className="space-y-2">
+        <Label>Goals Materi</Label>
+        <Textarea value={goalsMateri} onChange={(e) => setGoalsMateri(e.target.value)} placeholder="Tulis goals materi (satu per baris)..." rows={4} />
+      </div>
+      <div className="space-y-2">
+        <Label>Activity Report</Label>
+        <Textarea value={activityReportText} onChange={(e) => setActivityReportText(e.target.value)} placeholder="Tulis laporan aktivitas murid..." rows={3} />
+      </div>
+      <div className="space-y-2">
+        <Label>Komentar Coach</Label>
+        <Textarea value={coachComment} onChange={(e) => setCoachComment(e.target.value)} placeholder="Catatan dan feedback untuk orang tua..." rows={3} />
+      </div>
+      <div className="space-y-2">
+        <Label>Foto/Video Kegiatan</Label>
+        <Input type="file" multiple accept="image/*,video/*" onChange={(e) => setMediaFiles(Array.from(e.target.files || []))} />
+        {mediaFiles.length > 0 && <p className="text-sm text-muted-foreground">{mediaFiles.length} file dipilih</p>}
+      </div>
+      <Button onClick={handleSubmit} disabled={uploading} className="w-full">
+        {uploading ? (
+          <><Upload className="w-4 h-4 mr-2 animate-spin" />Mengunggah...</>
+        ) : (
+          <><Plus className="w-4 h-4 mr-2" />{submitLabel}</>
+        )}
+      </Button>
+    </div>
+  );
+}
+
+export default function ReportsAdminPage() {
+  const { reports, addReport, updateReport, deleteReport } = useActivityReports();
+  const { codes, generateCode, deleteCode } = useAccessCodes();
+  const { toast } = useToast();
+
+  const [editingReport, setEditingReport] = useState<ActivityReport | null>(null);
+  const [newCodeName, setNewCodeName] = useState('');
+
+  const handleCreateReport = async (data: Omit<ActivityReport, 'id' | 'createdAt'>, files: File[]) => {
+    const mediaUrls: string[] = [];
+    for (const file of files) {
       const url = await uploadReportMedia(file);
       if (url) mediaUrls.push(url);
     }
+    await addReport({ ...data, mediaUrls });
+    toast({ title: 'Berhasil!', description: `Laporan untuk ${data.studentName} berhasil ditambahkan.` });
+  };
 
-    await addReport({
-      studentName,
-      date,
-      level,
-      lessonWeek: parseInt(lessonWeek),
-      lessonName,
-      tools,
-      coach,
-      coachComment,
-      mediaUrls,
-    });
-
-    toast({ title: 'Berhasil!', description: `Laporan untuk ${studentName} berhasil ditambahkan.` });
-
-    // Reset form
-    setStudentName('');
-    setDate('');
-    setLevel('');
-    setLessonWeek('');
-    setLessonName('');
-    setTools('');
-    setCoach('');
-    setCoachComment('');
-    setMediaFiles([]);
-    setUploading(false);
+  const handleUpdateReport = async (data: Omit<ActivityReport, 'id' | 'createdAt'>, files: File[]) => {
+    if (!editingReport) return;
+    const newMediaUrls: string[] = [...data.mediaUrls];
+    for (const file of files) {
+      const url = await uploadReportMedia(file);
+      if (url) newMediaUrls.push(url);
+    }
+    await updateReport(editingReport.id, { ...data, mediaUrls: newMediaUrls });
+    toast({ title: 'Berhasil!', description: `Laporan untuk ${data.studentName} berhasil diperbarui.` });
+    setEditingReport(null);
   };
 
   const handleGenerateCode = async () => {
@@ -95,126 +186,27 @@ export default function ReportsAdminPage() {
 
         <Tabs defaultValue="create">
           <TabsList className="mb-4">
-            <TabsTrigger value="create" className="gap-1.5">
-              <FileText className="w-4 h-4" />
-              Buat Report
-            </TabsTrigger>
-            <TabsTrigger value="codes" className="gap-1.5">
-              <Key className="w-4 h-4" />
-              Kode Akses
-            </TabsTrigger>
-            <TabsTrigger value="history" className="gap-1.5">
-              <FileText className="w-4 h-4" />
-              Riwayat
-            </TabsTrigger>
+            <TabsTrigger value="create" className="gap-1.5"><FileText className="w-4 h-4" />Buat Report</TabsTrigger>
+            <TabsTrigger value="codes" className="gap-1.5"><Key className="w-4 h-4" />Kode Akses</TabsTrigger>
+            <TabsTrigger value="history" className="gap-1.5"><FileText className="w-4 h-4" />Riwayat</TabsTrigger>
           </TabsList>
 
-          {/* Create Report Tab */}
           <TabsContent value="create">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Buat Activity Report Baru</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Nama Murid *</Label>
-                    <Input value={studentName} onChange={(e) => setStudentName(e.target.value)} placeholder="Nama murid" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Tanggal *</Label>
-                    <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Level/Jenjang *</Label>
-                    <Select value={level} onValueChange={setLevel}>
-                      <SelectTrigger className="bg-background">
-                        <SelectValue placeholder="Pilih level" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover z-50">
-                        {LEVELS.map((l) => (
-                          <SelectItem key={l} value={l}>{l}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Coach *</Label>
-                    <Select value={coach} onValueChange={setCoach}>
-                      <SelectTrigger className="bg-background">
-                        <SelectValue placeholder="Pilih coach" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover z-50">
-                        {COACHES.map((c) => (
-                          <SelectItem key={c} value={c}>{c}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Minggu ke- *</Label>
-                    <Input type="number" min={1} value={lessonWeek} onChange={(e) => setLessonWeek(e.target.value)} placeholder="1" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Nama Materi (Lesson) *</Label>
-                    <Input value={lessonName} onChange={(e) => setLessonName(e.target.value)} placeholder="Nama materi" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Tools</Label>
-                  <Input value={tools} onChange={(e) => setTools(e.target.value)} placeholder="Alat/software yang digunakan" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Komentar Coach</Label>
-                  <Textarea value={coachComment} onChange={(e) => setCoachComment(e.target.value)} placeholder="Catatan dan feedback untuk orang tua..." rows={3} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Foto/Video Kegiatan</Label>
-                  <Input
-                    type="file"
-                    multiple
-                    accept="image/*,video/*"
-                    onChange={(e) => setMediaFiles(Array.from(e.target.files || []))}
-                  />
-                  {mediaFiles.length > 0 && (
-                    <p className="text-sm text-muted-foreground">{mediaFiles.length} file dipilih</p>
-                  )}
-                </div>
-                <Button onClick={handleSubmitReport} disabled={uploading} className="w-full">
-                  {uploading ? (
-                    <>
-                      <Upload className="w-4 h-4 mr-2 animate-spin" />
-                      Mengunggah...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Simpan Report
-                    </>
-                  )}
-                </Button>
+              <CardHeader><CardTitle className="text-lg">Buat Activity Report Baru</CardTitle></CardHeader>
+              <CardContent>
+                <ReportForm onSubmit={handleCreateReport} submitLabel="Simpan Report" />
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Access Codes Tab */}
           <TabsContent value="codes">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Kode Akses Orang Tua</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-lg">Kode Akses Orang Tua</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-2">
-                  <Input
-                    value={newCodeName}
-                    onChange={(e) => setNewCodeName(e.target.value)}
-                    placeholder="Nama murid"
-                    className="flex-1"
-                  />
-                  <Button onClick={handleGenerateCode}>
-                    <Plus className="w-4 h-4 mr-1" />
-                    Generate
-                  </Button>
+                  <Input value={newCodeName} onChange={(e) => setNewCodeName(e.target.value)} placeholder="Nama murid" className="flex-1" />
+                  <Button onClick={handleGenerateCode}><Plus className="w-4 h-4 mr-1" />Generate</Button>
                 </div>
                 <div className="space-y-2">
                   {codes.map((c) => (
@@ -224,24 +216,17 @@ export default function ReportsAdminPage() {
                         <p className="text-xs text-muted-foreground font-mono tracking-widest">{c.accessCode}</p>
                       </div>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => copyCode(c.accessCode)}>
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteCode(c.id)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => copyCode(c.accessCode)}><Copy className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteCode(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                       </div>
                     </div>
                   ))}
-                  {codes.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">Belum ada kode akses.</p>
-                  )}
+                  {codes.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Belum ada kode akses.</p>}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* History Tab */}
           <TabsContent value="history">
             <div className="space-y-3">
               {reports.map((r) => (
@@ -258,9 +243,14 @@ export default function ReportsAdminPage() {
                         {r.tools && <p className="text-xs text-muted-foreground">Tools: {r.tools}</p>}
                         {r.coachComment && <p className="text-sm mt-1 italic text-muted-foreground">"{r.coachComment}"</p>}
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => deleteReport(r.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => setEditingReport(r)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteReport(r.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
                     {r.mediaUrls.length > 0 && (
                       <div className="flex gap-2 mt-3 flex-wrap">
@@ -274,12 +264,20 @@ export default function ReportsAdminPage() {
                   </CardContent>
                 </Card>
               ))}
-              {reports.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-8">Belum ada laporan.</p>
-              )}
+              {reports.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Belum ada laporan.</p>}
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Edit Dialog */}
+        <Dialog open={!!editingReport} onOpenChange={(open) => !open && setEditingReport(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>Edit Report</DialogTitle></DialogHeader>
+            {editingReport && (
+              <ReportForm initial={editingReport} onSubmit={handleUpdateReport} submitLabel="Update Report" />
+            )}
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

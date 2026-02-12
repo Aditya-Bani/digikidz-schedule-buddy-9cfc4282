@@ -88,51 +88,82 @@ function ParentReportView({ studentName, onBack }: { studentName: string; onBack
             <p className="text-muted-foreground">Belum ada laporan untuk {studentName}.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {reports.map((r) => (
-              <Card key={r.id}>
-                <CardContent className="p-5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-primary">
-                      {new Date(r.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                    </span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                      {r.level}
-                    </span>
+              <Card key={r.id} className="overflow-hidden">
+                <CardContent className="p-6 space-y-5">
+                  {/* Info Table */}
+                  <div className="space-y-2">
+                    <InfoRow label="Name" value={r.studentName} />
+                    <InfoRow label="Date" value={new Date(r.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} />
+                    <InfoRow label="Level" value={r.level} />
+                    <InfoRow label="Lesson" value={`Minggu ${r.lessonWeek}: ${r.lessonName}`} />
+                    <InfoRow label="Tools" value={r.tools || '-'} />
                   </div>
 
-                  <div className="space-y-1">
-                    <p className="font-semibold">Minggu {r.lessonWeek}: {r.lessonName}</p>
-                    {r.tools && <p className="text-sm text-muted-foreground">Tools: {r.tools}</p>}
-                    <p className="text-sm text-muted-foreground">Coach: {r.coach}</p>
-                  </div>
+                  {/* Goals Materi */}
+                  {r.goalsMateri && (
+                    <div className="space-y-2">
+                      <h3 className="font-bold text-foreground">Goals Materi</h3>
+                      <ol className="list-decimal list-inside space-y-1 text-sm text-foreground">
+                        {r.goalsMateri.split('\n').filter(Boolean).map((line, i) => (
+                          <li key={i}>{line.replace(/^\d+\.\s*/, '')}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
 
+                  {/* Activity Report */}
+                  {r.activityReportText && (
+                    <div className="space-y-2">
+                      <h3 className="font-bold text-foreground">Activity Report</h3>
+                      <p className="text-sm text-foreground whitespace-pre-line">{r.activityReportText}</p>
+                    </div>
+                  )}
+
+                  {/* Coach Comment */}
                   {r.coachComment && (
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Komentar Coach:</p>
+                    <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">Komentar Coach:</p>
                       <p className="text-sm">{r.coachComment}</p>
                     </div>
                   )}
 
+                  {/* Media */}
                   {r.mediaUrls.length > 0 && (
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex gap-3 flex-wrap">
                       {r.mediaUrls.map((url, i) => (
                         <a key={i} href={url} target="_blank" rel="noopener noreferrer">
                           <img
                             src={url}
                             alt={`Kegiatan ${i + 1}`}
-                            className="h-24 w-24 object-cover rounded-lg border border-border hover:opacity-80 transition-opacity"
+                            className="h-28 w-28 object-cover rounded-lg border border-border hover:opacity-80 transition-opacity"
                           />
                         </a>
                       ))}
                     </div>
                   )}
+
+                  {/* Report by */}
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-sm font-semibold text-foreground">Report by : {r.coach}</p>
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-2 text-sm">
+      <span className="font-bold text-foreground w-20 shrink-0">{label}</span>
+      <span className="text-muted-foreground">:</span>
+      <span className="text-foreground">{value}</span>
     </div>
   );
 }

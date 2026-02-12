@@ -16,10 +16,12 @@ export type Database = {
     Tables: {
       activity_reports: {
         Row: {
+          activity_report_text: string | null
           coach: string
           coach_comment: string | null
           created_at: string
           date: string
+          goals_materi: string | null
           id: string
           lesson_name: string
           lesson_week: number
@@ -30,10 +32,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          activity_report_text?: string | null
           coach: string
           coach_comment?: string | null
           created_at?: string
           date: string
+          goals_materi?: string | null
           id?: string
           lesson_name: string
           lesson_week: number
@@ -44,10 +48,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          activity_report_text?: string | null
           coach?: string
           coach_comment?: string | null
           created_at?: string
           date?: string
+          goals_materi?: string | null
           id?: string
           lesson_name?: string
           lesson_week?: number
