@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Header } from '@/components/Header';
 import { useActivityReports, useAccessCodes, uploadReportMedia, ActivityReport } from '@/hooks/useActivityReports';
 import { COACHES, LEVELS, Coach } from '@/types/schedule';
+import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -138,6 +139,14 @@ export default function ReportsAdminPage() {
 
   const [editingReport, setEditingReport] = useState<ActivityReport | null>(null);
   const [newCodeName, setNewCodeName] = useState('');
+  const [searchStudent, setSearchStudent] = useState('');
+  const [filterCoach, setFilterCoach] = useState('all');
+
+  const filteredReports = reports.filter((r) => {
+    const matchesSearch = !searchStudent || r.studentName.toLowerCase().includes(searchStudent.toLowerCase());
+    const matchesCoach = filterCoach === 'all' || r.coach === filterCoach;
+    return matchesSearch && matchesCoach;
+  });
 
   const handleCreateReport = async (data: Omit<ActivityReport, 'id' | 'createdAt'>, files: File[]) => {
     const mediaUrls: string[] = [];
@@ -228,8 +237,21 @@ export default function ReportsAdminPage() {
           </TabsContent>
 
           <TabsContent value="history">
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input value={searchStudent} onChange={(e) => setSearchStudent(e.target.value)} placeholder="Cari nama murid..." className="pl-9" />
+              </div>
+              <Select value={filterCoach} onValueChange={setFilterCoach}>
+                <SelectTrigger className="w-full sm:w-[180px] bg-background"><SelectValue placeholder="Semua Coach" /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">Semua Coach</SelectItem>
+                  {COACHES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-3">
-              {reports.map((r) => (
+              {filteredReports.map((r) => (
                 <Card key={r.id}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
@@ -264,7 +286,7 @@ export default function ReportsAdminPage() {
                   </CardContent>
                 </Card>
               ))}
-              {reports.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Belum ada laporan.</p>}
+              {filteredReports.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Tidak ada laporan ditemukan.</p>}
             </div>
           </TabsContent>
         </Tabs>
