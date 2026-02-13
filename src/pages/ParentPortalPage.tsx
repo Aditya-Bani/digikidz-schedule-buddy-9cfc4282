@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useActivityReports, useAccessCodes } from '@/hooks/useActivityReports';
+import { useActivityReports, useAccessCodes, ActivityReport } from '@/hooks/useActivityReports';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { KeyRound, ArrowLeft, BookOpen } from 'lucide-react';
+import { KeyRound, ArrowLeft, BookOpen, ChevronRight, FolderOpen, User } from 'lucide-react';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import logodk from '@/assets/logodk.png';
 
 export default function ParentPortalPage() {
@@ -61,8 +62,106 @@ export default function ParentPortalPage() {
   );
 }
 
+function WeekCard({ report }: { report: ActivityReport }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="min-w-[200px] max-w-[200px] shrink-0">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full p-3 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors text-left space-y-1"
+      >
+        <p className="font-semibold text-sm text-foreground">Week {report.lessonWeek}</p>
+        <p className="text-xs text-muted-foreground truncate">{report.lessonName}</p>
+        <p className="text-xs text-muted-foreground">
+          {new Date(report.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+        </p>
+      </button>
+      {expanded && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setExpanded(false)}>
+          <div className="bg-card rounded-xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start">
+              <h3 className="font-bold text-lg text-foreground">Week {report.lessonWeek}: {report.lessonName}</h3>
+              <button onClick={() => setExpanded(false)} className="text-muted-foreground hover:text-foreground text-xl">×</button>
+            </div>
+
+            <div className="space-y-2">
+              <InfoRow label="Name" value={report.studentName} />
+              <InfoRow label="Date" value={new Date(report.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} />
+              <InfoRow label="Level" value={report.level} />
+              <InfoRow label="Lesson" value={`Minggu ${report.lessonWeek}: ${report.lessonName}`} />
+              <InfoRow label="Tools" value={report.tools || '-'} />
+            </div>
+
+            {report.goalsMateri && (
+              <div className="space-y-2">
+                <h4 className="font-bold text-foreground">Goals Materi</h4>
+                <ol className="list-decimal list-inside space-y-1 text-sm text-foreground">
+                  {report.goalsMateri.split('\n').filter(Boolean).map((line, i) => (
+                    <li key={i}>{line.replace(/^\d+\.\s*/, '')}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {report.activityReportText && (
+              <div className="space-y-2">
+                <h4 className="font-bold text-foreground">Activity Report</h4>
+                <p className="text-sm text-foreground whitespace-pre-line">{report.activityReportText}</p>
+              </div>
+            )}
+
+            {report.coachComment && (
+              <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Komentar Coach:</p>
+                <p className="text-sm">{report.coachComment}</p>
+              </div>
+            )}
+
+            {report.mediaUrls.length > 0 && (
+              <div className="flex gap-3 flex-wrap">
+                {report.mediaUrls.map((url, i) => (
+                  <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                    <img src={url} alt={`Kegiatan ${i + 1}`} className="h-24 w-24 object-cover rounded-lg border border-border hover:opacity-80 transition-opacity" />
+                  </a>
+                ))}
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-border">
+              <p className="text-sm font-semibold text-foreground">Report by : {report.coach}</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WeekRow({ label, reports }: { label: string; reports: ActivityReport[] }) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
+      <ScrollArea className="w-full">
+        <div className="flex gap-3 pb-3">
+          {reports.length > 0 ? (
+            reports.map((r) => <WeekCard key={r.id} report={r} />)
+          ) : (
+            <p className="text-xs text-muted-foreground italic py-4">Belum ada report</p>
+          )}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+    </div>
+  );
+}
+
 function ParentReportView({ studentName, onBack }: { studentName: string; onBack: () => void }) {
   const { reports, loading } = useActivityReports(studentName);
+
+  // Group reports by week ranges
+  const week1to8 = reports.filter((r) => r.lessonWeek >= 1 && r.lessonWeek <= 8).sort((a, b) => a.lessonWeek - b.lessonWeek);
+  const week9to16 = reports.filter((r) => r.lessonWeek >= 9 && r.lessonWeek <= 16).sort((a, b) => a.lessonWeek - b.lessonWeek);
 
   return (
     <div className="min-h-screen bg-background">
@@ -79,7 +178,7 @@ function ParentReportView({ studentName, onBack }: { studentName: string; onBack
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 max-w-2xl">
+      <main className="container mx-auto px-4 py-6 max-w-3xl">
         {loading ? (
           <p className="text-center text-muted-foreground py-8">Memuat laporan...</p>
         ) : reports.length === 0 ? (
@@ -88,70 +187,18 @@ function ParentReportView({ studentName, onBack }: { studentName: string; onBack
             <p className="text-muted-foreground">Belum ada laporan untuk {studentName}.</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {reports.map((r) => (
-              <Card key={r.id} className="overflow-hidden">
-                <CardContent className="p-6 space-y-5">
-                  {/* Info Table */}
-                  <div className="space-y-2">
-                    <InfoRow label="Name" value={r.studentName} />
-                    <InfoRow label="Date" value={new Date(r.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} />
-                    <InfoRow label="Level" value={r.level} />
-                    <InfoRow label="Lesson" value={`Minggu ${r.lessonWeek}: ${r.lessonName}`} />
-                    <InfoRow label="Tools" value={r.tools || '-'} />
-                  </div>
-
-                  {/* Goals Materi */}
-                  {r.goalsMateri && (
-                    <div className="space-y-2">
-                      <h3 className="font-bold text-foreground">Goals Materi</h3>
-                      <ol className="list-decimal list-inside space-y-1 text-sm text-foreground">
-                        {r.goalsMateri.split('\n').filter(Boolean).map((line, i) => (
-                          <li key={i}>{line.replace(/^\d+\.\s*/, '')}</li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-
-                  {/* Activity Report */}
-                  {r.activityReportText && (
-                    <div className="space-y-2">
-                      <h3 className="font-bold text-foreground">Activity Report</h3>
-                      <p className="text-sm text-foreground whitespace-pre-line">{r.activityReportText}</p>
-                    </div>
-                  )}
-
-                  {/* Coach Comment */}
-                  {r.coachComment && (
-                    <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-                      <p className="text-xs font-medium text-muted-foreground">Komentar Coach:</p>
-                      <p className="text-sm">{r.coachComment}</p>
-                    </div>
-                  )}
-
-                  {/* Media */}
-                  {r.mediaUrls.length > 0 && (
-                    <div className="flex gap-3 flex-wrap">
-                      {r.mediaUrls.map((url, i) => (
-                        <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                          <img
-                            src={url}
-                            alt={`Kegiatan ${i + 1}`}
-                            className="h-28 w-28 object-cover rounded-lg border border-border hover:opacity-80 transition-opacity"
-                          />
-                        </a>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Report by */}
-                  <div className="pt-2 border-t border-border">
-                    <p className="text-sm font-semibold text-foreground">Report by : {r.coach}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <User className="h-5 w-5" />
+                {studentName}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <WeekRow label="Week 1 – 8" reports={week1to8} />
+              <WeekRow label="Week 9 – 16" reports={week9to16} />
+            </CardContent>
+          </Card>
         )}
       </main>
     </div>

@@ -141,6 +141,11 @@ export default function ReportsAdminPage() {
   const [newCodeName, setNewCodeName] = useState('');
   const [searchStudent, setSearchStudent] = useState('');
   const [filterCoach, setFilterCoach] = useState('all');
+  const [searchCode, setSearchCode] = useState('');
+
+  const filteredCodes = codes.filter((c) =>
+    !searchCode || c.studentName.toLowerCase().includes(searchCode.toLowerCase())
+  );
 
   const filteredReports = reports.filter((r) => {
     const matchesSearch = !searchStudent || r.studentName.toLowerCase().includes(searchStudent.toLowerCase());
@@ -217,8 +222,12 @@ export default function ReportsAdminPage() {
                   <Input value={newCodeName} onChange={(e) => setNewCodeName(e.target.value)} placeholder="Nama murid" className="flex-1" />
                   <Button onClick={handleGenerateCode}><Plus className="w-4 h-4 mr-1" />Generate</Button>
                 </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input value={searchCode} onChange={(e) => setSearchCode(e.target.value)} placeholder="Cari nama murid..." className="pl-9" />
+                </div>
                 <div className="space-y-2">
-                  {codes.map((c) => (
+                  {filteredCodes.map((c) => (
                     <div key={c.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30">
                       <div>
                         <p className="font-medium text-sm">{c.studentName}</p>
@@ -230,7 +239,7 @@ export default function ReportsAdminPage() {
                       </div>
                     </div>
                   ))}
-                  {codes.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Belum ada kode akses.</p>}
+                  {filteredCodes.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Tidak ada kode akses ditemukan.</p>}
                 </div>
               </CardContent>
             </Card>
