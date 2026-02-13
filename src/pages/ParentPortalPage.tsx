@@ -159,9 +159,17 @@ function WeekRow({ label, reports }: { label: string; reports: ActivityReport[] 
 function ParentReportView({ studentName, onBack }: { studentName: string; onBack: () => void }) {
   const { reports, loading } = useActivityReports(studentName);
 
-  // Group reports by week ranges
-  const week1to8 = reports.filter((r) => r.lessonWeek >= 1 && r.lessonWeek <= 8).sort((a, b) => a.lessonWeek - b.lessonWeek);
-  const week9to16 = reports.filter((r) => r.lessonWeek >= 9 && r.lessonWeek <= 16).sort((a, b) => a.lessonWeek - b.lessonWeek);
+  // Group reports by level: W1-16 = Level 1, W17-32 = Level 2, etc.
+  const sortedReports = [...reports].sort((a, b) => a.lessonWeek - b.lessonWeek);
+  const maxWeek = sortedReports.length > 0 ? Math.max(...sortedReports.map((r) => r.lessonWeek)) : 0;
+  const totalLevels = Math.max(1, Math.ceil(maxWeek / 16));
+  const levels = Array.from({ length: totalLevels }, (_, i) => {
+    const start = i * 16 + 1;
+    const end = (i + 1) * 16;
+    const halfA = sortedReports.filter((r) => r.lessonWeek >= start && r.lessonWeek <= start + 7);
+    const halfB = sortedReports.filter((r) => r.lessonWeek >= start + 8 && r.lessonWeek <= end);
+    return { level: i + 1, start, end, halfA, halfB };
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -187,18 +195,22 @@ function ParentReportView({ studentName, onBack }: { studentName: string; onBack
             <p className="text-muted-foreground">Belum ada laporan untuk {studentName}.</p>
           </div>
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <User className="h-5 w-5" />
-                {studentName}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <WeekRow label="Week 1 – 8" reports={week1to8} />
-              <WeekRow label="Week 9 – 16" reports={week9to16} />
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            {levels.map((lvl) => (
+              <Card key={lvl.level}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <User className="h-5 w-5" />
+                    {studentName} — Level {lvl.level}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <WeekRow label={`Week ${lvl.start} – ${lvl.start + 7}`} reports={lvl.halfA} />
+                  <WeekRow label={`Week ${lvl.start + 8} – ${lvl.end}`} reports={lvl.halfB} />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
       </main>
     </div>

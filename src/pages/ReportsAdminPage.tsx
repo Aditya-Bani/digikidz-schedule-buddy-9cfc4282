@@ -293,8 +293,52 @@ export default function ReportsAdminPage() {
             })()}
 
             {openFolder && (() => {
-              const studentReports = filteredReports.filter((r) => r.studentName === openFolder);
+              const studentReports = filteredReports
+                .filter((r) => r.studentName === openFolder)
+                .sort((a, b) => a.lessonWeek - b.lessonWeek);
               if (studentReports.length === 0) return null;
+
+              // Group by level: W1-16 = Level 1, W17-32 = Level 2, etc.
+              const maxWeek = Math.max(...studentReports.map((r) => r.lessonWeek));
+              const totalLevels = Math.ceil(maxWeek / 16);
+              const levels = Array.from({ length: totalLevels }, (_, i) => {
+                const start = i * 16 + 1;
+                const end = (i + 1) * 16;
+                const halfA = studentReports.filter((r) => r.lessonWeek >= start && r.lessonWeek <= start + 7);
+                const halfB = studentReports.filter((r) => r.lessonWeek >= start + 8 && r.lessonWeek <= end);
+                return { level: i + 1, start, end, halfA, halfB };
+              });
+
+              const ReportCard = ({ r }: { r: ActivityReport }) => (
+                <Card key={r.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <p className="font-semibold text-sm">Minggu {r.lessonWeek}: W{r.lessonWeek} - {r.lessonName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(r.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          {' • '}{r.coach} • {r.level}
+                        </p>
+                        {r.tools && <p className="text-xs text-muted-foreground">Tools: {r.tools}</p>}
+                        {r.coachComment && <p className="text-sm mt-1 italic text-muted-foreground truncate">"{r.coachComment}"</p>}
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" onClick={() => setEditingReport(r)}><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteReport(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </div>
+                    </div>
+                    {r.mediaUrls.length > 0 && (
+                      <div className="flex gap-2 mt-3 flex-wrap">
+                        {r.mediaUrls.map((url, i) => (
+                          <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                            <img src={url} alt={`Media ${i + 1}`} className="h-16 w-16 object-cover rounded-lg border border-border" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
 
               return (
                 <div className="mt-4 space-y-3">
@@ -305,40 +349,28 @@ export default function ReportsAdminPage() {
                     </h3>
                     <Button variant="ghost" size="sm" onClick={() => setOpenFolder(null)}>Tutup</Button>
                   </div>
-                  <div className="space-y-2">
-                    {studentReports
-                      .sort((a, b) => a.lessonWeek - b.lessonWeek)
-                      .map((r) => (
-                        <Card key={r.id}>
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-1 min-w-0 flex-1">
-                                <p className="font-semibold text-sm">Minggu {r.lessonWeek}: {r.lessonName}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {new Date(r.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                  {' • '}{r.coach} • {r.level}
-                                </p>
-                                {r.tools && <p className="text-xs text-muted-foreground">Tools: {r.tools}</p>}
-                                {r.coachComment && <p className="text-sm mt-1 italic text-muted-foreground truncate">"{r.coachComment}"</p>}
-                              </div>
-                              <div className="flex gap-1 shrink-0">
-                                <Button variant="ghost" size="icon" onClick={() => setEditingReport(r)}><Pencil className="h-4 w-4" /></Button>
-                                <Button variant="ghost" size="icon" onClick={() => deleteReport(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                              </div>
-                            </div>
-                            {r.mediaUrls.length > 0 && (
-                              <div className="flex gap-2 mt-3 flex-wrap">
-                                {r.mediaUrls.map((url, i) => (
-                                  <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                                    <img src={url} alt={`Media ${i + 1}`} className="h-16 w-16 object-cover rounded-lg border border-border" />
-                                  </a>
-                                ))}
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
-                  </div>
+                  {levels.map((lvl) => (
+                    <div key={lvl.level} className="space-y-3">
+                      <h4 className="text-md font-bold text-foreground border-b border-border pb-1">
+                        Level {lvl.level} <span className="text-sm font-normal text-muted-foreground">(Week {lvl.start} – {lvl.end})</span>
+                      </h4>
+                      {lvl.halfA.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Week {lvl.start} – {lvl.start + 7}</p>
+                          <div className="space-y-2">{lvl.halfA.map((r) => <ReportCard key={r.id} r={r} />)}</div>
+                        </div>
+                      )}
+                      {lvl.halfB.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Week {lvl.start + 8} – {lvl.end}</p>
+                          <div className="space-y-2">{lvl.halfB.map((r) => <ReportCard key={r.id} r={r} />)}</div>
+                        </div>
+                      )}
+                      {lvl.halfA.length === 0 && lvl.halfB.length === 0 && (
+                        <p className="text-xs text-muted-foreground italic py-2">Belum ada report untuk level ini.</p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               );
             })()}
