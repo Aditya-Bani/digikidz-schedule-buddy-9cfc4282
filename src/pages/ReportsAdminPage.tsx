@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Copy, Upload, FileText, Key, Pencil } from 'lucide-react';
+import { Plus, Trash2, Copy, Upload, FileText, Key, Pencil, FolderOpen } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 function ReportForm({
@@ -142,6 +142,7 @@ export default function ReportsAdminPage() {
   const [searchStudent, setSearchStudent] = useState('');
   const [filterCoach, setFilterCoach] = useState('all');
   const [searchCode, setSearchCode] = useState('');
+  const [openFolder, setOpenFolder] = useState<string | null>(null);
 
   const filteredCodes = codes.filter((c) =>
     !searchCode || c.studentName.toLowerCase().includes(searchCode.toLowerCase())
@@ -259,44 +260,88 @@ export default function ReportsAdminPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-3">
-              {filteredReports.map((r) => (
-                <Card key={r.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <p className="font-semibold">{r.studentName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(r.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                          {' • '}{r.coach} • {r.level}
-                        </p>
-                        <p className="text-sm">Minggu {r.lessonWeek}: {r.lessonName}</p>
-                        {r.tools && <p className="text-xs text-muted-foreground">Tools: {r.tools}</p>}
-                        {r.coachComment && <p className="text-sm mt-1 italic text-muted-foreground">"{r.coachComment}"</p>}
+
+            {(() => {
+              const grouped: Record<string, typeof filteredReports> = {};
+              filteredReports.forEach((r) => {
+                if (!grouped[r.studentName]) grouped[r.studentName] = [];
+                grouped[r.studentName].push(r);
+              });
+              const sortedNames = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+
+              if (sortedNames.length === 0) {
+                return <p className="text-sm text-muted-foreground text-center py-8">Tidak ada laporan ditemukan.</p>;
+              }
+
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {sortedNames.map((name) => (
+                    <button
+                      key={name}
+                      onClick={() => setOpenFolder(openFolder === name ? null : name)}
+                      className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-colors ${openFolder === name ? 'border-primary bg-primary/5' : 'border-border bg-card hover:bg-muted/50'}`}
+                    >
+                      <FolderOpen className={`h-5 w-5 shrink-0 ${openFolder === name ? 'text-primary' : 'text-amber-500'}`} />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{name}</p>
+                        <p className="text-xs text-muted-foreground">{grouped[name].length} report</p>
                       </div>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => setEditingReport(r)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteReport(r.id)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                    {r.mediaUrls.length > 0 && (
-                      <div className="flex gap-2 mt-3 flex-wrap">
-                        {r.mediaUrls.map((url, i) => (
-                          <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                            <img src={url} alt={`Media ${i + 1}`} className="h-16 w-16 object-cover rounded-lg border border-border" />
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-              {filteredReports.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Tidak ada laporan ditemukan.</p>}
-            </div>
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {openFolder && (() => {
+              const studentReports = filteredReports.filter((r) => r.studentName === openFolder);
+              if (studentReports.length === 0) return null;
+
+              return (
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <FolderOpen className="h-5 w-5 text-primary" />
+                      {openFolder}
+                    </h3>
+                    <Button variant="ghost" size="sm" onClick={() => setOpenFolder(null)}>Tutup</Button>
+                  </div>
+                  <div className="space-y-2">
+                    {studentReports
+                      .sort((a, b) => a.lessonWeek - b.lessonWeek)
+                      .map((r) => (
+                        <Card key={r.id}>
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="space-y-1 min-w-0 flex-1">
+                                <p className="font-semibold text-sm">Minggu {r.lessonWeek}: {r.lessonName}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(r.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                  {' • '}{r.coach} • {r.level}
+                                </p>
+                                {r.tools && <p className="text-xs text-muted-foreground">Tools: {r.tools}</p>}
+                                {r.coachComment && <p className="text-sm mt-1 italic text-muted-foreground truncate">"{r.coachComment}"</p>}
+                              </div>
+                              <div className="flex gap-1 shrink-0">
+                                <Button variant="ghost" size="icon" onClick={() => setEditingReport(r)}><Pencil className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => deleteReport(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                              </div>
+                            </div>
+                            {r.mediaUrls.length > 0 && (
+                              <div className="flex gap-2 mt-3 flex-wrap">
+                                {r.mediaUrls.map((url, i) => (
+                                  <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                                    <img src={url} alt={`Media ${i + 1}`} className="h-16 w-16 object-cover rounded-lg border border-border" />
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                  </div>
+                </div>
+              );
+            })()}
           </TabsContent>
         </Tabs>
 
