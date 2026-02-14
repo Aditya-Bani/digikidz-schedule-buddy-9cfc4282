@@ -1,8 +1,10 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logodk from '@/assets/logodk.png';
 import { LiveClock } from './LiveClock';
-import { CalendarDays, LayoutGrid, FileText, Users } from 'lucide-react';
+import { CalendarDays, LayoutGrid, FileText, Users, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 
 const navItems = [
   { to: '/', label: 'Jadwal', icon: LayoutGrid },
@@ -13,6 +15,13 @@ const navItems = [
 
 export function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
+  };
 
   return (
     <header className="bg-card border-b border-border shadow-sm">
@@ -44,7 +53,12 @@ export function Header() {
               ))}
             </nav>
           </div>
-          <LiveClock />
+          <div className="flex items-center gap-3">
+            <LiveClock />
+            <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </header>

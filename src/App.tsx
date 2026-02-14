@@ -7,7 +7,9 @@ import Index from "./pages/Index";
 import CalendarPage from "./pages/CalendarPage";
 import ReportsAdminPage from "./pages/ReportsAdminPage";
 import ParentPortalPage from "./pages/ParentPortalPage";
+import LoginPage from "./pages/LoginPage";
 import NotFound from "./pages/NotFound";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -18,9 +20,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/kalender" element={<CalendarPage />} />
-          <Route path="/reports" element={<ReportsAdminPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          <Route path="/kalender" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><ReportsAdminPage /></ProtectedRoute>} />
           <Route path="/parent" element={<ParentPortalPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
