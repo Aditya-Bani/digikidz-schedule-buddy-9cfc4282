@@ -5,11 +5,12 @@ import { ScheduleGrid } from '@/components/ScheduleGrid';
 import { ScheduleDialog } from '@/components/ScheduleDialog';
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
 import { useSchedule } from '@/hooks/useSchedule';
-import { ScheduleEntry, DayOfWeek, TimeSlot, Coach, COACHES, LEVELS, StudentLevel } from '@/types/schedule';
-import { Plus, Filter, X } from 'lucide-react';
+import { ScheduleEntry, DayOfWeek, TimeSlot, Coach, COACHES, LEVELS } from '@/types/schedule';
+import { Plus, Filter, X, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 const Index = () => {
   const { schedule, addEntry, updateEntry, deleteEntry, getEntriesForCell } = useSchedule();
@@ -73,13 +74,13 @@ const Index = () => {
     if (editingEntry) {
       updateEntry(editingEntry.id, data);
       toast({
-        title: 'Berhasil!',
+        title: 'Berhasil',
         description: `Jadwal ${data.studentName} berhasil diperbarui.`,
       });
     } else {
       addEntry(data);
       toast({
-        title: 'Berhasil!',
+        title: 'Berhasil',
         description: `Jadwal ${data.studentName} berhasil ditambahkan.`,
       });
     }
@@ -98,19 +99,24 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-8">
         {/* Stats */}
-        <StatsCards schedule={schedule} />
+        <div className="mb-8">
+          <StatsCards schedule={schedule} />
+        </div>
 
         {/* Action Bar */}
-        <div className="flex flex-col gap-3 mb-4">
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-foreground">Jadwal Mingguan</h2>
-              <p className="text-sm text-muted-foreground">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-3">
+                <Calendar className="w-7 h-7 text-blue-600 dark:text-blue-400" />
+                Jadwal Mingguan
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 ml-10">
                 Klik pada sel untuk menambah atau mengedit jadwal murid
               </p>
             </div>
@@ -121,7 +127,7 @@ const Index = () => {
                 setDefaultTime('08:00');
                 setDialogOpen(true);
               }}
-              className="shadow-lg"
+              className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg"
             >
               <Plus className="w-4 h-4 mr-2" />
               Tambah Jadwal
@@ -129,13 +135,16 @@ const Index = () => {
           </div>
 
           {/* Filters */}
-          <div className="flex flex-wrap items-center gap-3">
-            <Filter className="h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</span>
+            </div>
             <Select value={filterCoach} onValueChange={(v) => setFilterCoach(v as Coach | 'all')}>
-              <SelectTrigger className="w-[160px] bg-background">
+              <SelectTrigger className="w-[180px] bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-lg">
                 <SelectValue placeholder="Semua Coach" />
               </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
+              <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-lg z-50">
                 <SelectItem value="all">Semua Coach</SelectItem>
                 {COACHES.map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -143,10 +152,10 @@ const Index = () => {
               </SelectContent>
             </Select>
             <Select value={filterLevel} onValueChange={setFilterLevel}>
-              <SelectTrigger className="w-[180px] bg-background">
+              <SelectTrigger className="w-[200px] bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-lg">
                 <SelectValue placeholder="Semua Level" />
               </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
+              <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-lg z-50">
                 <SelectItem value="all">Semua Level</SelectItem>
                 <SelectItem value="Little Creator">Little Creator</SelectItem>
                 <SelectItem value="Junior">Junior</SelectItem>
@@ -155,16 +164,26 @@ const Index = () => {
               </SelectContent>
             </Select>
             {hasActiveFilter && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
-                <X className="h-4 w-4 mr-1" />
-                Reset
-              </Button>
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={clearFilters} 
+                  className="text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Reset
+                </Button>
+                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium px-2 py-1 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                  Filter aktif
+                </span>
+              </>
             )}
           </div>
         </div>
 
         {/* Schedule Grid */}
-        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <ScheduleGrid
             getEntriesForCell={filteredGetEntriesForCell}
             onAddEntry={handleAddClick}
@@ -174,27 +193,36 @@ const Index = () => {
         </div>
 
         {/* Legend */}
-        <div className="mt-6 flex flex-wrap gap-4 items-center justify-center">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-[hsl(var(--coach-bani)/0.3)] border-l-4 border-[hsl(var(--coach-bani))]" />
-            <span className="text-sm text-muted-foreground">Mr. Bani</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-[hsl(var(--coach-argy)/0.3)] border-l-4 border-[hsl(var(--coach-argy))]" />
-            <span className="text-sm text-muted-foreground">Mr. Argy</span>
-          </div>
-          <div className="w-px h-4 bg-border" />
-          <div className="flex items-center gap-2">
-            <span className="level-badge level-little-creator">Little Creator</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="level-badge level-junior">Junior</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="level-badge level-teenager">Teenager</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="level-badge level-trial">Trial Class</span>
+        <div className="mt-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 uppercase tracking-wide">
+            Legenda
+          </h3>
+          <div className="flex flex-wrap gap-8 items-center justify-center">
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Coach</p>
+              <div className="flex gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-[hsl(var(--coach-bani)/0.2)] border-l-4 border-[hsl(var(--coach-bani))]" />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Mr. Bani</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-[hsl(var(--coach-argy)/0.2)] border-l-4 border-[hsl(var(--coach-argy))]" />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Mr. Argy</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="w-px h-12 bg-gray-200 dark:bg-gray-700"></div>
+            
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Level</p>
+              <div className="flex flex-wrap gap-3">
+                <span className="level-badge level-little-creator">Little Creator</span>
+                <span className="level-badge level-junior">Junior</span>
+                <span className="level-badge level-teenager">Teenager</span>
+                <span className="level-badge level-trial">Trial Class</span>
+              </div>
+            </div>
           </div>
         </div>
       </main>

@@ -3,9 +3,10 @@ import { useActivityReports, useAccessCodes, ActivityReport } from '@/hooks/useA
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { KeyRound, ArrowLeft, BookOpen, ChevronRight, FolderOpen, User } from 'lucide-react';
+import { KeyRound, ArrowLeft, BookOpen, User, Calendar, Award, Clock } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import logodk from '@/assets/logodk.png';
+import { cn } from '@/lib/utils';
 
 export default function ParentPortalPage() {
   const [code, setCode] = useState('');
@@ -29,33 +30,55 @@ export default function ParentPortalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-4">
-          <img src={logodk} alt="DIGIKIDZ" className="h-16 mx-auto" />
-          <div>
-            <CardTitle className="text-xl">Parent Portal</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm">
+        <CardHeader className="text-center space-y-6 pb-6">
+          <div className="flex justify-center">
+            <img src={logodk} alt="DIGIKIDZ" className="h-16" />
+          </div>
+          <div className="space-y-2">
+            <CardTitle className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              Parent Portal
+            </CardTitle>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Masukkan kode akses untuk melihat Activity Report anak Anda
             </p>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <Input
-              value={code}
-              onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(''); }}
-              placeholder="Masukkan kode akses"
-              className="font-mono tracking-widest text-center text-lg"
-              maxLength={6}
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmitCode()}
-            />
+        
+        <CardContent className="space-y-5">
+          <div className="space-y-3">
+            <div className="relative">
+              <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input
+                value={code}
+                onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(''); }}
+                placeholder="KODE AKSES"
+                className="pl-11 h-14 font-mono tracking-widest text-center text-xl font-semibold border-gray-300 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg"
+                maxLength={6}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmitCode()}
+              />
+            </div>
+            {error && (
+              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                <p className="text-sm text-red-700 dark:text-red-300 text-center">{error}</p>
+              </div>
+            )}
           </div>
-          {error && <p className="text-sm text-destructive text-center">{error}</p>}
-          <Button onClick={handleSubmitCode} className="w-full" size="lg">
-            <KeyRound className="w-4 h-4 mr-2" />
+          
+          <Button 
+            onClick={handleSubmitCode} 
+            className="w-full h-12 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg font-medium" 
+          >
+            <KeyRound className="w-5 h-5 mr-2" />
             Lihat Report
           </Button>
+          
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-800 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Kode akses dapat diperoleh dari coach Anda
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -69,67 +92,122 @@ function WeekCard({ report }: { report: ActivityReport }) {
     <div className="min-w-[200px] max-w-[200px] shrink-0">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full p-3 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors text-left space-y-1"
+        className="w-full p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left space-y-2"
       >
-        <p className="font-semibold text-sm text-foreground">Week {report.lessonWeek}</p>
-        <p className="text-xs text-muted-foreground truncate">{report.lessonName}</p>
-        <p className="text-xs text-muted-foreground">
-          {new Date(report.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+        <div className="flex items-center justify-between">
+          <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">
+            Week {report.lessonWeek}
+          </p>
+          <Award className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        </div>
+        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 leading-snug">
+          {report.lessonName}
         </p>
+        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+          <Calendar className="w-3 h-3" />
+          {new Date(report.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+        </div>
       </button>
+      
       {expanded && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setExpanded(false)}>
-          <div className="bg-card rounded-xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-start">
-              <h3 className="font-bold text-lg text-foreground">Week {report.lessonWeek}: {report.lessonName}</h3>
-              <button onClick={() => setExpanded(false)} className="text-muted-foreground hover:text-foreground text-xl">×</button>
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 z-10">
+              <div className="flex justify-between items-start gap-4">
+                <div className="space-y-1 flex-1">
+                  <div className="text-blue-600 dark:text-blue-400 text-sm font-semibold">
+                    Week {report.lessonWeek}
+                  </div>
+                  <h3 className="font-semibold text-xl text-gray-900 dark:text-gray-100">{report.lessonName}</h3>
+                </div>
+                <button 
+                  onClick={() => setExpanded(false)} 
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <InfoRow label="Name" value={report.studentName} />
-              <InfoRow label="Date" value={new Date(report.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} />
-              <InfoRow label="Level" value={report.level} />
-              <InfoRow label="Lesson" value={`Minggu ${report.lessonWeek}: ${report.lessonName}`} />
-              <InfoRow label="Tools" value={report.tools || '-'} />
-            </div>
-
-            {report.goalsMateri && (
-              <div className="space-y-2">
-                <h4 className="font-bold text-foreground">Goals Materi</h4>
-                <ol className="list-decimal list-inside space-y-1 text-sm text-foreground">
-                  {report.goalsMateri.split('\n').filter(Boolean).map((line, i) => (
-                    <li key={i}>{line.replace(/^\d+\.\s*/, '')}</li>
-                  ))}
-                </ol>
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <InfoRow label="Name" value={report.studentName} icon={<User className="w-4 h-4" />} />
+                <InfoRow 
+                  label="Date" 
+                  value={new Date(report.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} 
+                  icon={<Calendar className="w-4 h-4" />}
+                />
+                <InfoRow label="Level" value={report.level} icon={<Award className="w-4 h-4" />} />
+                <InfoRow label="Lesson" value={`Minggu ${report.lessonWeek}: ${report.lessonName}`} icon={<BookOpen className="w-4 h-4" />} />
               </div>
-            )}
+              
+              {report.tools && (
+                <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
+                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">Tools</p>
+                  <p className="text-sm text-gray-900 dark:text-gray-100">{report.tools}</p>
+                </div>
+              )}
 
-            {report.activityReportText && (
-              <div className="space-y-2">
-                <h4 className="font-bold text-foreground">Activity Report</h4>
-                <p className="text-sm text-foreground whitespace-pre-line">{report.activityReportText}</p>
+              {report.goalsMateri && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                    Goals Materi
+                  </h4>
+                  <ol className="list-decimal list-inside space-y-2 pl-2">
+                    {report.goalsMateri.split('\n').filter(Boolean).map((line, i) => (
+                      <li key={i} className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                        {line.replace(/^\d+\.\s*/, '')}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              {report.activityReportText && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                    Activity Report
+                  </h4>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed pl-2">
+                    {report.activityReportText}
+                  </p>
+                </div>
+              )}
+
+              {report.coachComment && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                  <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide mb-2">
+                    Komentar Coach
+                  </p>
+                  <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed">{report.coachComment}</p>
+                </div>
+              )}
+
+              {report.mediaUrls.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                    Dokumentasi Kegiatan
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {report.mediaUrls.map((url, i) => (
+                      <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="group relative">
+                        <img 
+                          src={url} 
+                          alt={`Kegiatan ${i + 1}`} 
+                          className="w-full aspect-square object-cover rounded-lg border border-gray-200 dark:border-gray-700 group-hover:border-blue-500 transition-all" 
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Report by: <span className="font-semibold text-gray-900 dark:text-gray-100">{report.coach}</span>
+                </p>
               </div>
-            )}
-
-            {report.coachComment && (
-              <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">Komentar Coach:</p>
-                <p className="text-sm">{report.coachComment}</p>
-              </div>
-            )}
-
-            {report.mediaUrls.length > 0 && (
-              <div className="flex gap-3 flex-wrap">
-                {report.mediaUrls.map((url, i) => (
-                  <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                    <img src={url} alt={`Kegiatan ${i + 1}`} className="h-24 w-24 object-cover rounded-lg border border-border hover:opacity-80 transition-opacity" />
-                  </a>
-                ))}
-              </div>
-            )}
-
-            <div className="pt-2 border-t border-border">
-              <p className="text-sm font-semibold text-foreground">Report by : {report.coach}</p>
             </div>
           </div>
         </div>
@@ -140,14 +218,20 @@ function WeekCard({ report }: { report: ActivityReport }) {
 
 function WeekRow({ label, reports }: { label: string; reports: ActivityReport[] }) {
   return (
-    <div className="space-y-2">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
+    <div className="space-y-3">
+      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide flex items-center gap-2">
+        <Clock className="w-3 h-3" />
+        {label}
+      </p>
       <ScrollArea className="w-full">
         <div className="flex gap-3 pb-3">
           {reports.length > 0 ? (
             reports.map((r) => <WeekCard key={r.id} report={r} />)
           ) : (
-            <p className="text-xs text-muted-foreground italic py-4">Belum ada report</p>
+            <div className="text-center py-8 px-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 w-full">
+              <BookOpen className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+              <p className="text-sm text-gray-600 dark:text-gray-400 italic">Belum ada report</p>
+            </div>
           )}
         </div>
         <ScrollBar orientation="horizontal" />
@@ -159,7 +243,6 @@ function WeekRow({ label, reports }: { label: string; reports: ActivityReport[] 
 function ParentReportView({ studentName, onBack }: { studentName: string; onBack: () => void }) {
   const { reports, loading } = useActivityReports(studentName);
 
-  // Group reports by level: W1-16 = Level 1, W17-32 = Level 2, etc.
   const sortedReports = [...reports].sort((a, b) => a.lessonWeek - b.lessonWeek);
   const maxWeek = sortedReports.length > 0 ? Math.max(...sortedReports.map((r) => r.lessonWeek)) : 0;
   const totalLevels = Math.max(1, Math.ceil(maxWeek / 16));
@@ -172,39 +255,64 @@ function ParentReportView({ studentName, onBack }: { studentName: string; onBack
   });
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-border shadow-sm">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onBack}
+            className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <img src={logodk} alt="DIGIKIDZ" className="h-10" />
-          <div>
-            <h1 className="font-bold text-foreground">{studentName}</h1>
-            <p className="text-xs text-muted-foreground">Activity Report</p>
+          <div className="flex items-center gap-3">
+            <img src={logodk} alt="DIGIKIDZ" className="h-10" />
+            <div>
+              <h1 className="font-semibold text-lg text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                {studentName}
+              </h1>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Activity Report</p>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 max-w-3xl">
+      <main className="container mx-auto px-4 py-6 max-w-5xl">
         {loading ? (
-          <p className="text-center text-muted-foreground py-8">Memuat laporan...</p>
+          <div className="text-center py-20">
+            <div className="w-12 h-12 mx-auto border-4 border-gray-300 dark:border-gray-700 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Memuat laporan...</p>
+          </div>
         ) : reports.length === 0 ? (
-          <div className="text-center py-12 space-y-3">
-            <BookOpen className="h-12 w-12 mx-auto text-muted-foreground/50" />
-            <p className="text-muted-foreground">Belum ada laporan untuk {studentName}.</p>
+          <div className="text-center py-20 space-y-6">
+            <div className="mx-auto w-fit p-6 bg-gray-100 dark:bg-gray-800 rounded-full">
+              <BookOpen className="h-16 w-16 mx-auto text-gray-400" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">Belum Ada Laporan</p>
+              <p className="text-gray-600 dark:text-gray-400">Belum ada laporan untuk {studentName}.</p>
+            </div>
           </div>
         ) : (
           <div className="space-y-6">
             {levels.map((lvl) => (
-              <Card key={lvl.level}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <User className="h-5 w-5" />
-                    {studentName} — Level {lvl.level}
+              <Card key={lvl.level} className="border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+                <CardHeader className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
+                  <CardTitle className="flex items-center gap-3 text-lg">
+                    <Award className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div>
+                      <span className="text-gray-900 dark:text-gray-100 font-semibold">
+                        {studentName} — Level {lvl.level}
+                      </span>
+                      <p className="text-sm font-normal text-gray-600 dark:text-gray-400 mt-1">
+                        Week {lvl.start} – {lvl.end}
+                      </p>
+                    </div>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 pt-6">
                   <WeekRow label={`Week ${lvl.start} – ${lvl.start + 7}`} reports={lvl.halfA} />
                   <WeekRow label={`Week ${lvl.start + 8} – ${lvl.end}`} reports={lvl.halfB} />
                 </CardContent>
@@ -217,12 +325,16 @@ function ParentReportView({ studentName, onBack }: { studentName: string; onBack
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value, icon }: { label: string; value: string; icon?: React.ReactNode }) {
   return (
-    <div className="flex gap-2 text-sm">
-      <span className="font-bold text-foreground w-20 shrink-0">{label}</span>
-      <span className="text-muted-foreground">:</span>
-      <span className="text-foreground">{value}</span>
+    <div className="flex gap-3 items-start p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
+      {icon && <div className="text-blue-600 dark:text-blue-400 mt-0.5">{icon}</div>}
+      <div className="flex-1 min-w-0">
+        <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide block mb-1">
+          {label}
+        </span>
+        <span className="text-sm text-gray-900 dark:text-gray-100 font-medium block break-words">{value}</span>
+      </div>
     </div>
   );
 }
